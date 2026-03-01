@@ -34,8 +34,9 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-24" role="status" aria-live="polite">
         <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+        <span className="sr-only">Loading session details...</span>
       </div>
     );
   }
@@ -61,6 +62,7 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
       >
         <Link
           href="/history"
+          aria-label="Back to session history"
           className="inline-flex items-center gap-2 text-neutral-500 hover:text-white transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -89,7 +91,7 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3" aria-label={`Overall score: ${session.overallScore} out of 10`}>
             <Award className="w-5 h-5 text-yellow-500" />
             <span className="text-2xl font-bold">{session.overallScore}/10</span>
           </div>

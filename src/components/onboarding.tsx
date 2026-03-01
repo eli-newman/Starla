@@ -44,22 +44,26 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <form aria-label="Interview setup" onSubmit={(e) => e.preventDefault()} className="space-y-6">
           {step === 1 && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-4"
+              aria-current="step"
             >
               <div className="space-y-2">
-                <label className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Target Role</label>
+                <label htmlFor="role-input" className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Target Role</label>
+                <p id="role-hint" className="sr-only">Enter the job title you are targeting, for example Senior Product Designer</p>
                 <div className="relative">
-                  <Briefcase className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" />
+                  <Briefcase className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" aria-hidden="true" />
                   <input
+                    id="role-input"
                     type="text"
                     value={formData.role}
                     onChange={(e) => handleChange('role', e.target.value)}
                     placeholder="e.g. Senior Product Designer"
+                    aria-describedby="role-hint"
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all"
                     autoFocus
                   />
@@ -67,14 +71,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Target Company</label>
+                <label htmlFor="company-input" className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Target Company</label>
+                <p id="company-hint" className="sr-only">Enter the company name, for example Google, Airbnb, or Stripe</p>
                 <div className="relative">
-                  <Building className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" />
+                  <Building className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" aria-hidden="true" />
                   <input
+                    id="company-input"
                     type="text"
                     value={formData.company}
                     onChange={(e) => handleChange('company', e.target.value)}
                     placeholder="e.g. Google, Airbnb, Stripe"
+                    aria-describedby="company-hint"
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all"
                   />
                 </div>
@@ -87,12 +94,14 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-4"
+              aria-current="step"
             >
               <div className="space-y-2">
-                <label className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Experience Level</label>
+                <label htmlFor="experience-select" className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Experience Level</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" />
+                  <User className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" aria-hidden="true" />
                   <select
+                    id="experience-select"
                     value={formData.experience}
                     onChange={(e) => handleChange('experience', e.target.value)}
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all appearance-none"
@@ -108,14 +117,17 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Focus Areas</label>
+                <label htmlFor="focus-input" className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Focus Areas</label>
+                <p id="focus-hint" className="sr-only">Enter your interview focus areas, for example System Design, Behavioral, or Leadership</p>
                 <div className="relative">
-                  <Target className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" />
+                  <Target className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" aria-hidden="true" />
                   <input
+                    id="focus-input"
                     type="text"
                     value={formData.focusAreas}
                     onChange={(e) => handleChange('focusAreas', e.target.value)}
                     placeholder="e.g. System Design, Behavioral, Leadership"
+                    aria-describedby="focus-hint"
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all"
                   />
                 </div>
@@ -128,15 +140,19 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="space-y-4"
+              aria-current="step"
             >
               <div className="space-y-2">
-                <label className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Resume / Background</label>
+                <label htmlFor="resume-textarea" className="text-xs font-mono text-neutral-500 uppercase tracking-wider">Resume / Background</label>
+                <p id="resume-hint" className="sr-only">Paste your resume text or a brief bio describing your background</p>
                 <div className="relative">
-                  <FileText className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" />
+                  <FileText className="absolute left-4 top-3.5 w-5 h-5 text-neutral-600" aria-hidden="true" />
                   <textarea
+                    id="resume-textarea"
                     value={formData.resume}
                     onChange={(e) => handleChange('resume', e.target.value)}
                     placeholder="Paste your resume text or a brief bio here..."
+                    aria-describedby="resume-hint"
                     className="w-full h-48 bg-neutral-900 border border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-neutral-700 focus:outline-none focus:ring-1 focus:ring-neutral-500 transition-all resize-none"
                   />
                 </div>
@@ -168,7 +184,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        </form>
       </motion.div>
     </div>
   );

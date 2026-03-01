@@ -14,7 +14,12 @@ vi.mock('@/lib/gemini', () => ({
   generateQuestion: vi.fn().mockResolvedValue({ text: 'Describe a challenge', type: 'behavioral' }),
 }));
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
+}));
+
 import { POST } from '@/app/api/interview/question/route';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function makeRequest(body: any): NextRequest {
   return new NextRequest('http://localhost:3000/api/interview/question', {
@@ -37,5 +42,20 @@ describe('POST /api/interview/question', () => {
   it('returns 400 without researchData', async () => {
     const response = await POST(makeRequest({ history: [] }));
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when history is not an array', async () => {
+    const response = await POST(makeRequest({ history: 'bad', researchData: {} }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('history');
+  });
+
+  it('returns 429 when rate limited', async () => {
+    vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 30 });
+    const response = await POST(makeRequest({ history: [], researchData: {} }));
+    const body = await response.json();
+    expect(response.status).toBe(429);
+    expect(body.error).toContain('30 seconds');
   });
 });

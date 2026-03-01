@@ -19,7 +19,12 @@ vi.mock('@/lib/gemini', () => ({
   }),
 }));
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
+}));
+
 import { POST } from '@/app/api/interview/evaluate/route';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function makeRequest(body: any): NextRequest {
   return new NextRequest('http://localhost:3000/api/interview/evaluate', {
@@ -42,5 +47,27 @@ describe('POST /api/interview/evaluate', () => {
   it('returns 400 without question', async () => {
     const response = await POST(makeRequest({ answer: 'A' }));
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when answer is not a string', async () => {
+    const response = await POST(makeRequest({ question: 'Q?', answer: 123 }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('answer');
+  });
+
+  it('returns 400 when question exceeds max length', async () => {
+    const response = await POST(makeRequest({ question: 'x'.repeat(5001), answer: 'A' }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('5000');
+  });
+
+  it('returns 429 when rate limited', async () => {
+    vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 15 });
+    const response = await POST(makeRequest({ question: 'Q?', answer: 'A' }));
+    const body = await response.json();
+    expect(response.status).toBe(429);
+    expect(body.error).toContain('15 seconds');
   });
 });

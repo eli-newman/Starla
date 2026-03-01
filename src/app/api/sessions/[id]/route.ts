@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, handleAuthError } from '@/lib/auth-middleware';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { getAdminDb } from '@/lib/firebase-admin';
 
 export async function GET(
@@ -8,6 +9,15 @@ export async function GET(
 ) {
   try {
     const { uid } = await verifyAuth(request);
+
+    const rateLimitResult = checkRateLimit(uid, 'sessions');
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter} seconds.` },
+        { status: 429 },
+      );
+    }
+
     const doc = await getAdminDb().collection('interviews').doc(params.id).get();
 
     if (!doc.exists) {

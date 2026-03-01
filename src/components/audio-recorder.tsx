@@ -121,13 +121,14 @@ export function AudioRecorder({ onRecordingComplete, isProcessing }: AudioRecord
           className="w-full h-full"
         />
         {!isRecording && !isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-xs font-mono">
+          <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-xs font-mono" role="status">
             Ready to record
           </div>
         )}
         {isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/80">
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/80" role="status" aria-live="polite">
             <Loader2 className="w-5 h-5 animate-spin text-neutral-400" />
+            <span className="sr-only">Processing audio...</span>
           </div>
         )}
       </div>
@@ -135,6 +136,7 @@ export function AudioRecorder({ onRecordingComplete, isProcessing }: AudioRecord
       <button
         onClick={isRecording ? stopRecording : startRecording}
         disabled={isProcessing}
+        aria-label={isRecording ? 'Stop recording' : 'Start recording'}
         className={cn(
           'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-200',
           isRecording

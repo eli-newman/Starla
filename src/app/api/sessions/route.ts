@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, handleAuthError } from '@/lib/auth-middleware';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { getAdminDb } from '@/lib/firebase-admin';
-import type { SaveSessionRequest } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
     const { uid } = await verifyAuth(request);
+
+    const rateLimitResult = checkRateLimit(uid, 'sessions');
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter} seconds.` },
+        { status: 429 },
+      );
+    }
+
     const snapshot = await getAdminDb()
       .collection('interviews')
       .where('userId', '==', uid)
@@ -22,17 +31,43 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { uid } = await verifyAuth(request);
-    const body: SaveSessionRequest = await request.json();
 
-    if (!body.profile || !body.history) {
-      return NextResponse.json({ error: 'profile and history are required' }, { status: 400 });
+    const rateLimitResult = checkRateLimit(uid, 'sessions');
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter} seconds.` },
+        { status: 429 },
+      );
+    }
+
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
+    }
+
+    const { profile, history, overallScore } = body as Record<string, unknown>;
+
+    if (!profile || typeof profile !== 'object') {
+      return NextResponse.json({ error: 'profile is required and must be an object' }, { status: 400 });
+    }
+    if (!Array.isArray(history)) {
+      return NextResponse.json({ error: 'history is required and must be an array' }, { status: 400 });
+    }
+    if (history.length > 100) {
+      return NextResponse.json({ error: 'history must have at most 100 entries' }, { status: 400 });
     }
 
     const docRef = await getAdminDb().collection('interviews').add({
       userId: uid,
-      profile: body.profile,
-      history: body.history,
-      overallScore: body.overallScore,
+      profile,
+      history,
+      overallScore: typeof overallScore === 'number' ? overallScore : 0,
       createdAt: new Date().toISOString(),
     });
 

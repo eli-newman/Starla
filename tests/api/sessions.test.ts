@@ -31,7 +31,12 @@ vi.mock('@/lib/firebase-admin', () => {
   };
 });
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
+}));
+
 import { GET, POST } from '@/app/api/sessions/route';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function makeGetRequest(): NextRequest {
   return new NextRequest('http://localhost:3000/api/sessions', {
@@ -57,6 +62,14 @@ describe('/api/sessions', () => {
       expect(response.status).toBe(200);
       expect(body.sessions).toHaveLength(1);
     });
+
+    it('returns 429 when rate limited', async () => {
+      vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 20 });
+      const response = await GET(makeGetRequest());
+      const body = await response.json();
+      expect(response.status).toBe(429);
+      expect(body.error).toContain('20 seconds');
+    });
   });
 
   describe('POST', () => {
@@ -76,6 +89,23 @@ describe('/api/sessions', () => {
     it('returns 400 without profile', async () => {
       const response = await POST(makePostRequest({ history: [] }));
       expect(response.status).toBe(400);
+    });
+
+    it('returns 400 when history is not an array', async () => {
+      const response = await POST(makePostRequest({ profile: { role: 'SWE' }, history: 'bad' }));
+      const body = await response.json();
+      expect(response.status).toBe(400);
+      expect(body.error).toContain('history');
+    });
+
+    it('returns 429 when rate limited', async () => {
+      vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 5 });
+      const response = await POST(
+        makePostRequest({ profile: { role: 'SWE' }, history: [] }),
+      );
+      const body = await response.json();
+      expect(response.status).toBe(429);
+      expect(body.error).toContain('5 seconds');
     });
   });
 });

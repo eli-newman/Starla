@@ -61,6 +61,7 @@ export function Interview({ question, isProcessing, onAnswer, feedback, onNextQu
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
+          aria-live="assertive"
         >
           <div className="flex items-center gap-3">
             <span className="px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs font-mono text-neutral-400 uppercase tracking-wider">
@@ -69,6 +70,7 @@ export function Interview({ question, isProcessing, onAnswer, feedback, onNextQu
             {audioUrl && (
               <button
                 onClick={toggleAudio}
+                aria-label={isPlaying ? 'Pause question audio' : 'Play question audio'}
                 className="p-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-colors"
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -130,10 +132,10 @@ export function Interview({ question, isProcessing, onAnswer, feedback, onNextQu
                   className="bg-white text-black px-6 py-2 rounded-full font-medium hover:bg-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    <span role="status">
+                      <Loader2 className="w-4 h-4 animate-spin inline" />
                       Generating...
-                    </>
+                    </span>
                   ) : (
                     'Next Question'
                   )}
@@ -151,7 +153,7 @@ export function Interview({ question, isProcessing, onAnswer, feedback, onNextQu
           className="mt-auto pt-8 border-t border-neutral-900"
         >
           {isProcessing ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4" role="status" aria-live="polite">
               <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
               <p className="text-neutral-500 font-mono text-sm">Analyzing your response...</p>
             </div>
@@ -174,6 +176,7 @@ export function Interview({ question, isProcessing, onAnswer, feedback, onNextQu
                   <button
                     onClick={handleTextSubmit}
                     disabled={!answerText.trim()}
+                    aria-label="Submit answer"
                     className="absolute right-3 bottom-3 p-2 text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
                   >
                     <Send className="w-5 h-5" />

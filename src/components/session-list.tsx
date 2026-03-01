@@ -21,8 +21,9 @@ export function SessionList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <div className="flex items-center justify-center py-24" role="status" aria-live="polite">
         <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+        <span className="sr-only">Loading sessions...</span>
       </div>
     );
   }
@@ -61,6 +62,7 @@ export function SessionList() {
         >
           <Link
             href={`/history/${session.id}`}
+            aria-label={`View session: ${session.profile.role} at ${session.profile.company}, score ${session.overallScore} out of 10`}
             className="block bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 hover:border-neutral-700 transition-colors group"
           >
             <div className="flex items-start justify-between">

@@ -193,6 +193,8 @@ export function InterviewFlow() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="flex-1 flex flex-col items-center justify-center space-y-6 max-w-md mx-auto px-6"
+          role="status"
+          aria-live="polite"
         >
           <div className="relative">
             <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
@@ -216,8 +218,8 @@ export function InterviewFlow() {
           {researchData?.sources && researchData.sources.length > 0 && (
             <div className="absolute top-4 right-6 z-30">
               <div className="group relative">
-                <button className="text-xs text-neutral-500 hover:text-white transition-colors flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                <button aria-label="View research sources" className="text-xs text-neutral-500 hover:text-white transition-colors flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
                   Research Active
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-64 bg-neutral-900 border border-neutral-800 rounded-xl p-4 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">

@@ -29,7 +29,7 @@ export function Summary({ history, onRestart }: SummaryProps) {
           <Award className="w-10 h-10 text-yellow-500" />
         </div>
         <h1 className="text-4xl font-light">Interview Complete</h1>
-        <div className="flex items-center justify-center gap-2 text-neutral-400">
+        <div className="flex items-center justify-center gap-2 text-neutral-400" aria-label={`Overall score: ${averageScore} out of 10`}>
           <span>Overall Score:</span>
           <span className="text-2xl font-bold text-white">{averageScore}/10</span>
         </div>
@@ -92,6 +92,7 @@ export function Summary({ history, onRestart }: SummaryProps) {
         </button>
         <Link
           href="/history"
+          aria-label="View all past interview sessions"
           className="flex items-center gap-2 px-6 py-3 rounded-full bg-neutral-900 border border-neutral-800 text-white hover:bg-neutral-800 transition-colors font-medium"
         >
           <History className="w-4 h-4" />

@@ -14,7 +14,12 @@ vi.mock('@/lib/gemini', () => ({
   transcribeAudio: vi.fn().mockResolvedValue('Hello world'),
 }));
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
+}));
+
 import { POST } from '@/app/api/interview/transcribe/route';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function makeRequest(body: any): NextRequest {
   return new NextRequest('http://localhost:3000/api/interview/transcribe', {
@@ -37,5 +42,27 @@ describe('POST /api/interview/transcribe', () => {
   it('returns 400 without audioBase64', async () => {
     const response = await POST(makeRequest({ mimeType: 'audio/webm' }));
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when audioBase64 is not a string', async () => {
+    const response = await POST(makeRequest({ audioBase64: 123, mimeType: 'audio/webm' }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('audioBase64');
+  });
+
+  it('returns 400 without mimeType', async () => {
+    const response = await POST(makeRequest({ audioBase64: 'data' }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('mimeType');
+  });
+
+  it('returns 429 when rate limited', async () => {
+    vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 55 });
+    const response = await POST(makeRequest({ audioBase64: 'data', mimeType: 'audio/webm' }));
+    const body = await response.json();
+    expect(response.status).toBe(429);
+    expect(body.error).toContain('55 seconds');
   });
 });

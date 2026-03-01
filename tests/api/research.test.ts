@@ -22,7 +22,12 @@ vi.mock('@/lib/gemini', () => ({
   }),
 }));
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
+}));
+
 import { POST } from '@/app/api/interview/research/route';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 function makeRequest(body: any): NextRequest {
   return new NextRequest('http://localhost:3000/api/interview/research', {
@@ -45,5 +50,34 @@ describe('POST /api/interview/research', () => {
   it('returns 400 without role', async () => {
     const response = await POST(makeRequest({ company: 'Google' }));
     expect(response.status).toBe(400);
+  });
+
+  it('returns 400 when role is not a string', async () => {
+    const response = await POST(makeRequest({ role: 123, company: 'Google' }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('role');
+  });
+
+  it('returns 400 when role exceeds max length', async () => {
+    const response = await POST(makeRequest({ role: 'x'.repeat(201), company: 'Google' }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('200');
+  });
+
+  it('returns 400 when resume exceeds max length', async () => {
+    const response = await POST(makeRequest({ role: 'SWE', company: 'Google', resume: 'x'.repeat(10001) }));
+    const body = await response.json();
+    expect(response.status).toBe(400);
+    expect(body.error).toContain('resume');
+  });
+
+  it('returns 429 when rate limited', async () => {
+    vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 42 });
+    const response = await POST(makeRequest({ role: 'SWE', company: 'Google' }));
+    const body = await response.json();
+    expect(response.status).toBe(429);
+    expect(body.error).toContain('42 seconds');
   });
 });

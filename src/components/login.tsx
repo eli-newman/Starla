@@ -23,6 +23,7 @@ export function Login() {
 
         <button
           onClick={() => signInWithGoogle()}
+          aria-label="Sign in with Google"
           className="w-full bg-white text-black px-6 py-4 rounded-2xl font-medium flex items-center justify-center gap-3 hover:bg-neutral-200 transition-all shadow-xl"
         >
           <LogIn className="w-5 h-5" />

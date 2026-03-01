@@ -18,8 +18,9 @@ export function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center" role="status" aria-live="polite">
         <Loader2 className="w-8 h-8 animate-spin text-neutral-500" />
+        <span className="sr-only">Loading...</span>
       </div>
     );
   }
