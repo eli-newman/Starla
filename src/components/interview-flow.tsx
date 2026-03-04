@@ -22,6 +22,7 @@ import {
   fetchUsage,
   createCheckoutSession,
 } from '@/lib/api-client';
+import { createBehavioralResearchData } from '@/lib/behavioral-context';
 import { useToast } from '@/components/toast';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { serializeHistory } from '@/lib/serialize-history';
@@ -86,6 +87,7 @@ export function InterviewFlow() {
     state: {
       jobDescription: jobSetup?.jobDescription ?? '',
       companyName: jobSetup?.companyName ?? '',
+      mode: jobSetup?.mode,
       researchData,
       questions,
       currentQuestionIndex,
@@ -209,23 +211,30 @@ export function InterviewFlow() {
     }
 
     setJobSetup(data);
-    setStep('researching');
     setIsProcessing(true);
-    setResearchStep(0);
 
     try {
-      // No client-side extraction — just show generic spinner
+      let research: ResearchData;
 
-      setResearchStep(1);
+      if (data.mode === 'general') {
+        // General mode: use pre-built behavioral context, skip company research
+        research = createBehavioralResearchData();
+        setResearchData(research);
+      } else {
+        // Targeted mode: full research flow
+        setStep('researching');
+        setResearchStep(0);
 
-      // Run research with JD + profile data
-      const research = await fetchResearch({
-        jobDescription: data.jobDescription,
-        resume: profile.resume,
-        experience: profile.experience,
-      });
-      setResearchData(research);
-      setResearchStep(2);
+        setResearchStep(1);
+
+        research = await fetchResearch({
+          jobDescription: data.jobDescription,
+          resume: profile.resume,
+          experience: profile.experience,
+        });
+        setResearchData(research);
+        setResearchStep(2);
+      }
 
       const firstQuestionData = await fetchQuestion({ history: [], researchData: research });
       const firstQuestion: Question = {
@@ -388,7 +397,7 @@ export function InterviewFlow() {
     setIsProcessing(true);
     try {
       const draft = draftToResume;
-      setJobSetup({ jobDescription: draft.jobDescription, companyName: draft.companyName || '' });
+      setJobSetup({ jobDescription: draft.jobDescription, companyName: draft.companyName || '', mode: draft.mode });
       setResearchData(draft.researchData);
       setQuestions(
         draft.questions.map((q) => ({

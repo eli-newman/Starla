@@ -12,6 +12,7 @@ export interface UserProfileData {
 export interface JobSetup {
   jobDescription: string;
   companyName: string;
+  mode?: 'targeted' | 'general';
 }
 
 // --- Extracted job info (from Gemini) ---
@@ -230,6 +231,7 @@ export interface UsageData {
 export interface InterviewDraft {
   jobDescription: string;
   companyName?: string;
+  mode?: 'targeted' | 'general';
   researchData: ResearchData;
   questions: Array<{ text: string; type: string; difficulty?: string; id: string }>;
   currentQuestionIndex: number;

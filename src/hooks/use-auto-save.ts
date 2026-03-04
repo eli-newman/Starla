@@ -9,6 +9,7 @@ import { auth } from '@/lib/firebase-client';
 interface AutoSaveState {
   jobDescription: string;
   companyName: string;
+  mode?: 'targeted' | 'general';
   researchData: ResearchData | null;
   questions: Question[];
   currentQuestionIndex: number;
@@ -27,6 +28,7 @@ function buildDraft(state: AutoSaveState): InterviewDraft {
   return {
     jobDescription: state.jobDescription,
     companyName: state.companyName || undefined,
+    mode: state.mode,
     researchData: state.researchData!,
     questions: state.questions.map((q) => ({
       text: q.text,
