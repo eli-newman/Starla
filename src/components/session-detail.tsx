@@ -73,11 +73,11 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <Briefcase className="w-5 h-5 text-neutral-500" />
-              <h1 className="text-2xl font-light">{session.profile.role}</h1>
+              <h1 className="text-2xl font-light">{session.profile.role || 'Interview Session'}</h1>
             </div>
             <div className="flex items-center gap-3 text-neutral-400">
               <Building className="w-4 h-4 text-neutral-600" />
-              <span>{session.profile.company}</span>
+              <span>{session.profile.company || 'Unknown Company'}</span>
             </div>
             <p className="text-xs text-neutral-600 font-mono">
               {new Date(session.createdAt).toLocaleDateString('en-US', {

@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, handleAuthError } from '@/lib/auth-middleware';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { researchRole } from '@/lib/gemini';
+import { researchJob } from '@/lib/gemini';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 export const maxDuration = 60;
+
+async function hashJD(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text.slice(0, 5000));
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,19 +40,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
     }
 
-    const { role, company, resume, focusAreas } = body as Record<string, unknown>;
+    const { jobDescription, resume, experience } = body as Record<string, unknown>;
 
-    if (!role || typeof role !== 'string') {
-      return NextResponse.json({ error: 'role is required and must be a string' }, { status: 400 });
+    if (!jobDescription || typeof jobDescription !== 'string') {
+      return NextResponse.json({ error: 'jobDescription is required and must be a string' }, { status: 400 });
     }
-    if (!company || typeof company !== 'string') {
-      return NextResponse.json({ error: 'company is required and must be a string' }, { status: 400 });
-    }
-    if (role.length > 200) {
-      return NextResponse.json({ error: 'role must be under 200 characters' }, { status: 400 });
-    }
-    if (company.length > 200) {
-      return NextResponse.json({ error: 'company must be under 200 characters' }, { status: 400 });
+    if (jobDescription.length > 10000) {
+      return NextResponse.json({ error: 'jobDescription must be under 10000 characters' }, { status: 400 });
     }
     if (resume !== undefined && typeof resume !== 'string') {
       return NextResponse.json({ error: 'resume must be a string' }, { status: 400 });
@@ -48,21 +54,51 @@ export async function POST(request: NextRequest) {
     if (typeof resume === 'string' && resume.length > 10000) {
       return NextResponse.json({ error: 'resume must be under 10000 characters' }, { status: 400 });
     }
-    if (focusAreas !== undefined && typeof focusAreas !== 'string') {
-      return NextResponse.json({ error: 'focusAreas must be a string' }, { status: 400 });
+    if (experience !== undefined && typeof experience !== 'string') {
+      return NextResponse.json({ error: 'experience must be a string' }, { status: 400 });
     }
-    if (typeof focusAreas === 'string' && focusAreas.length > 2000) {
-      return NextResponse.json({ error: 'focusAreas must be under 2000 characters' }, { status: 400 });
+    // Check research cache (non-blocking — don't let cache errors kill the request)
+    const hash = await hashJD(jobDescription);
+    let db: ReturnType<typeof getAdminDb> | null = null;
+    let cacheRef: FirebaseFirestore.DocumentReference | null = null;
+
+    try {
+      db = getAdminDb();
+      cacheRef = db.collection('research-cache').doc(hash);
+      const cached = await cacheRef.get();
+
+      if (cached.exists) {
+        const data = cached.data()!;
+        const createdAt = new Date(data.createdAt).getTime();
+        if (Date.now() - createdAt < CACHE_TTL_MS) {
+          return NextResponse.json(data.result);
+        }
+      }
+    } catch (cacheErr) {
+      console.error('Research cache read failed (continuing without cache):', cacheErr);
+      cacheRef = null;
     }
 
-    const result = await researchRole(
-      role,
-      company,
+    const result = await researchJob(
+      jobDescription,
       typeof resume === 'string' ? resume : '',
-      typeof focusAreas === 'string' ? focusAreas : '',
+      typeof experience === 'string' ? experience : '',
     );
+
+    // Store in cache (non-blocking)
+    if (cacheRef) {
+      cacheRef.set({
+        result,
+        createdAt: new Date().toISOString(),
+        userId: uid,
+      }).catch((err: unknown) => console.error('Research cache write failed:', err));
+    }
+
     return NextResponse.json(result);
   } catch (error) {
+    if (!(error instanceof Error && error.name === 'AuthError')) {
+      console.error('Research route error:', error);
+    }
     return handleAuthError(error);
   }
 }

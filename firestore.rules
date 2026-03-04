@@ -2,11 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Profiles: users can only CRUD their own profile
+    match /profiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Sessions: users can only CRUD their own sessions
     match /sessions/{sessionId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Interview drafts: users can only CRUD their own draft
+    match /interview-drafts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Research cache: authenticated users can read/write
+    match /research-cache/{hash} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null;
     }
 
     // Default: deny all

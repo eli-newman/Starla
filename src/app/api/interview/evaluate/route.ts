@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, handleAuthError } from '@/lib/auth-middleware';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { evaluateAnswer } from '@/lib/gemini';
+import type { ResearchData } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
     }
 
-    const { question, answer, context } = body as Record<string, unknown>;
+    const { question, answer, context, resume } = body as Record<string, unknown>;
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json({ error: 'question is required and must be a string' }, { status: 400 });
@@ -41,9 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'answer must be under 5000 characters' }, { status: 400 });
     }
 
-    const result = await evaluateAnswer(question, answer, (context as any) || {});
+    const result = await evaluateAnswer(
+      question,
+      answer,
+      (context as ResearchData) || { companyContext: '', roleContext: '', suggestedQuestions: [] },
+      typeof resume === 'string' ? resume : undefined,
+    );
     return NextResponse.json(result);
   } catch (error) {
+    if (!(error instanceof Error && error.name === 'AuthError')) {
+      console.error('Evaluate route error:', error);
+    }
     return handleAuthError(error);
   }
 }

@@ -15,13 +15,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const snapshot = await getAdminDb()
-      .collection('interviews')
-      .where('userId', '==', uid)
-      .orderBy('createdAt', 'desc')
-      .get();
-
-    const sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    let sessions: Record<string, unknown>[] = [];
+    try {
+      const snapshot = await getAdminDb()
+        .collection('interviews')
+        .where('userId', '==', uid)
+        .orderBy('createdAt', 'desc')
+        .get();
+      sessions = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    } catch {
+      // Composite index may not exist — fall back to unordered query
+      try {
+        const snapshot = await getAdminDb()
+          .collection('interviews')
+          .where('userId', '==', uid)
+          .get();
+        sessions = snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .sort((a, b) => {
+            const dateA = typeof (a as Record<string, unknown>).createdAt === 'string' ? new Date((a as Record<string, unknown>).createdAt as string).getTime() : 0;
+            const dateB = typeof (b as Record<string, unknown>).createdAt === 'string' ? new Date((b as Record<string, unknown>).createdAt as string).getTime() : 0;
+            return dateB - dateA;
+          });
+      } catch (firestoreError: unknown) {
+        console.error('Firestore query error (sessions):', firestoreError);
+      }
+    }
     return NextResponse.json({ sessions });
   } catch (error) {
     return handleAuthError(error);
@@ -51,7 +70,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Request body must be a JSON object' }, { status: 400 });
     }
 
-    const { profile, history, overallScore } = body as Record<string, unknown>;
+    const { profile, jobDescription, history, overallScore, sessionDurationSeconds, completedAllQuestions, followUpsOffered, followUpsTaken } = body as Record<string, unknown>;
 
     if (!profile || typeof profile !== 'object') {
       return NextResponse.json({ error: 'profile is required and must be an object' }, { status: 400 });
@@ -63,13 +82,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'history must have at most 100 entries' }, { status: 400 });
     }
 
-    const docRef = await getAdminDb().collection('interviews').add({
+    const db = getAdminDb();
+    const docRef = await db.collection('interviews').add({
       userId: uid,
       profile,
+      ...(typeof jobDescription === 'string' ? { jobDescription } : {}),
       history,
       overallScore: typeof overallScore === 'number' ? overallScore : 0,
+      ...(typeof sessionDurationSeconds === 'number' ? { sessionDurationSeconds } : {}),
+      ...(typeof completedAllQuestions === 'boolean' ? { completedAllQuestions } : {}),
+      ...(typeof followUpsOffered === 'number' ? { followUpsOffered } : {}),
+      ...(typeof followUpsTaken === 'number' ? { followUpsTaken } : {}),
       createdAt: new Date().toISOString(),
     });
+
+    // Clean up any interview draft now that the session is saved
+    await db.collection('interview-drafts').doc(uid).delete().catch(() => {});
 
     return NextResponse.json({ id: docRef.id });
   } catch (error) {

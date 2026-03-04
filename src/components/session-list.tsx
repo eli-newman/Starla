@@ -30,8 +30,16 @@ export function SessionList() {
 
   if (error) {
     return (
-      <div className="text-center py-24">
-        <p className="text-red-400">{error}</p>
+      <div className="text-center py-24 space-y-4">
+        <p className="text-neutral-500 text-lg">Could not load sessions.</p>
+        <p className="text-neutral-600 text-sm">{error}</p>
+        <Link
+          href="/interview"
+          className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-neutral-200 transition-colors"
+        >
+          Start an Interview
+          <ChevronRight className="w-4 h-4" />
+        </Link>
       </div>
     );
   }
@@ -62,18 +70,18 @@ export function SessionList() {
         >
           <Link
             href={`/history/${session.id}`}
-            aria-label={`View session: ${session.profile.role} at ${session.profile.company}, score ${session.overallScore} out of 10`}
+            aria-label={`View session: ${session.profile.role || 'Interview Session'} at ${session.profile.company || 'Unknown Company'}, score ${session.overallScore} out of 10`}
             className="block bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 hover:border-neutral-700 transition-colors group"
           >
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <Briefcase className="w-4 h-4 text-neutral-500" />
-                  <span className="font-medium">{session.profile.role}</span>
+                  <span className="font-medium">{session.profile.role || 'Interview Session'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-neutral-400">
                   <Building className="w-4 h-4 text-neutral-600" />
-                  <span>{session.profile.company}</span>
+                  <span>{session.profile.company || 'Unknown Company'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-neutral-600">
                   <Clock className="w-3 h-3" />

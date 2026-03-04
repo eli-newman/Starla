@@ -2,13 +2,15 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { logOut } from '@/lib/firebase-client';
-import { Loader2, LogOut, History } from 'lucide-react';
+import { createCheckoutSession } from '@/lib/api-client';
+import { Loader2, LogOut, History, UserCircle, BarChart3, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, plan } = useAuth();
+  const [upgrading, setUpgrading] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,12 +50,51 @@ export function AppShell({ children }: { children: ReactNode }) {
             >
               <History className="w-5 h-5" />
             </Link>
+            <Link
+              href="/analytics"
+              className="text-neutral-500 hover:text-white transition-colors"
+              aria-label="Analytics"
+              aria-current={pathname === '/analytics' ? 'page' : undefined}
+            >
+              <BarChart3 className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/profile"
+              className="text-neutral-500 hover:text-white transition-colors"
+              aria-label="Edit Profile"
+              aria-current={pathname === '/profile' ? 'page' : undefined}
+            >
+              <UserCircle className="w-5 h-5" />
+            </Link>
+            {plan === 'pro' ? (
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700">
+                Pro
+              </span>
+            ) : (
+              <button
+                onClick={async () => {
+                  setUpgrading(true);
+                  try {
+                    const { url } = await createCheckoutSession();
+                    window.location.href = url;
+                  } catch {
+                    setUpgrading(false);
+                  }
+                }}
+                disabled={upgrading}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="w-3 h-3" />
+                {upgrading ? 'Loading...' : 'Upgrade'}
+              </button>
+            )}
             <div className="flex items-center gap-3 pr-4 border-r border-neutral-900">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
                   alt={user.displayName || ''}
-                  className="w-8 h-8 rounded-full border border-neutral-800"
+                  referrerPolicy="no-referrer"
+                  className="w-8 h-8 rounded-full border border-neutral-800 object-cover"
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full border border-neutral-800 bg-neutral-800" aria-hidden="true" />

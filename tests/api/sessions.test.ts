@@ -19,12 +19,15 @@ vi.mock('@/lib/firebase-admin', () => {
   });
   const mockOrderBy = vi.fn().mockReturnValue({ get: mockGet });
   const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+  const mockDelete = vi.fn().mockResolvedValue(undefined);
+  const mockDoc = vi.fn().mockReturnValue({ delete: mockDelete });
 
   return {
     getAdminDb: () => ({
       collection: vi.fn().mockReturnValue({
         add: mockAdd,
         where: mockWhere,
+        doc: mockDoc,
       }),
     }),
     getAdminAuth: () => ({ verifyIdToken: vi.fn() }),

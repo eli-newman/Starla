@@ -14,13 +14,29 @@ vi.mock('@/lib/auth-middleware', () => ({
 }));
 
 vi.mock('@/lib/gemini', () => ({
-  researchRole: vi.fn().mockResolvedValue({
+  researchJob: vi.fn().mockResolvedValue({
     companyContext: 'Great company',
     roleContext: 'Needs skills',
     suggestedQuestions: ['Q1'],
     sources: [],
   }),
 }));
+
+vi.mock('@/lib/firebase-admin', () => {
+  const mockCacheGet = vi.fn().mockResolvedValue({ exists: false });
+  const mockCacheSet = vi.fn().mockResolvedValue(undefined);
+  return {
+    getAdminDb: () => ({
+      collection: () => ({
+        doc: () => ({
+          get: mockCacheGet,
+          set: mockCacheSet,
+        }),
+      }),
+    }),
+    getAdminAuth: () => ({ verifyIdToken: vi.fn() }),
+  };
+});
 
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockReturnValue({ allowed: true, retryAfter: 0 }),
@@ -41,33 +57,33 @@ describe('POST /api/interview/research', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns research data', async () => {
-    const response = await POST(makeRequest({ role: 'SWE', company: 'Google', resume: '', focusAreas: '' }));
+    const response = await POST(makeRequest({ jobDescription: 'Senior SWE at Google...', resume: '', experience: 'Senior' }));
     const body = await response.json();
     expect(response.status).toBe(200);
     expect(body.companyContext).toBe('Great company');
   });
 
-  it('returns 400 without role', async () => {
-    const response = await POST(makeRequest({ company: 'Google' }));
+  it('returns 400 without jobDescription', async () => {
+    const response = await POST(makeRequest({ resume: 'my resume' }));
     expect(response.status).toBe(400);
   });
 
-  it('returns 400 when role is not a string', async () => {
-    const response = await POST(makeRequest({ role: 123, company: 'Google' }));
+  it('returns 400 when jobDescription is not a string', async () => {
+    const response = await POST(makeRequest({ jobDescription: 123 }));
     const body = await response.json();
     expect(response.status).toBe(400);
-    expect(body.error).toContain('role');
+    expect(body.error).toContain('jobDescription');
   });
 
-  it('returns 400 when role exceeds max length', async () => {
-    const response = await POST(makeRequest({ role: 'x'.repeat(201), company: 'Google' }));
+  it('returns 400 when jobDescription exceeds max length', async () => {
+    const response = await POST(makeRequest({ jobDescription: 'x'.repeat(10001) }));
     const body = await response.json();
     expect(response.status).toBe(400);
-    expect(body.error).toContain('200');
+    expect(body.error).toContain('10000');
   });
 
   it('returns 400 when resume exceeds max length', async () => {
-    const response = await POST(makeRequest({ role: 'SWE', company: 'Google', resume: 'x'.repeat(10001) }));
+    const response = await POST(makeRequest({ jobDescription: 'SWE at Google', resume: 'x'.repeat(10001) }));
     const body = await response.json();
     expect(response.status).toBe(400);
     expect(body.error).toContain('resume');
@@ -75,7 +91,7 @@ describe('POST /api/interview/research', () => {
 
   it('returns 429 when rate limited', async () => {
     vi.mocked(checkRateLimit).mockReturnValueOnce({ allowed: false, retryAfter: 42 });
-    const response = await POST(makeRequest({ role: 'SWE', company: 'Google' }));
+    const response = await POST(makeRequest({ jobDescription: 'SWE at Google' }));
     const body = await response.json();
     expect(response.status).toBe(429);
     expect(body.error).toContain('42 seconds');

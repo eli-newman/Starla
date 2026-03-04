@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, handleAuthError } from '@/lib/auth-middleware';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { generateQuestion } from '@/lib/gemini';
+import type { ResearchData } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,9 +39,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'history must have at most 50 entries' }, { status: 400 });
     }
 
-    const result = await generateQuestion(Array.isArray(history) ? history : [], researchData as any);
+    const result = await generateQuestion(Array.isArray(history) ? history : [], researchData as ResearchData);
     return NextResponse.json(result);
   } catch (error) {
+    if (!(error instanceof Error && error.name === 'AuthError')) {
+      console.error('Question route error:', error);
+    }
     return handleAuthError(error);
   }
 }

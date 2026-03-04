@@ -12,6 +12,7 @@ import type {
   TTSRequest,
   SaveSessionRequest,
   InterviewSession,
+  UserProfileData,
 } from '@/types';
 
 async function getIdToken(): Promise<string> {
@@ -20,15 +21,17 @@ async function getIdToken(): Promise<string> {
   return user.getIdToken();
 }
 
-async function apiFetch<T>(path: string, body?: unknown): Promise<T> {
+async function apiFetch<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {
   const token = await getIdToken();
+  const method = options?.method || (options?.body ? 'POST' : 'GET');
+
   const response = await fetch(path, {
-    method: body ? 'POST' : 'GET',
+    method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    ...(body ? { body: JSON.stringify(body) } : {}),
+    ...(options?.body ? { body: JSON.stringify(options.body) } : {}),
   });
 
   if (!response.ok) {
@@ -39,26 +42,42 @@ async function apiFetch<T>(path: string, body?: unknown): Promise<T> {
   return response.json();
 }
 
+// --- Profile API ---
+
+export function fetchProfile(): Promise<{ profile: UserProfileData | null }> {
+  return apiFetch('/api/profile');
+}
+
+export function saveProfile(data: { experience: string; resume?: string }): Promise<{ profile: UserProfileData }> {
+  return apiFetch('/api/profile', { method: 'PUT', body: data });
+}
+
 // --- Interview API ---
 
 export function fetchResearch(data: ResearchRequest): Promise<ResearchData> {
-  return apiFetch('/api/interview/research', data);
+  return apiFetch('/api/interview/research', { body: data });
 }
 
-export function fetchQuestion(data: QuestionRequest): Promise<{ text: string; type: string }> {
-  return apiFetch('/api/interview/question', data);
+export function fetchQuestion(data: QuestionRequest): Promise<{ text: string; type: string; difficulty: string }> {
+  return apiFetch('/api/interview/question', { body: data });
 }
 
 export function fetchEvaluation(data: EvaluateRequest): Promise<Feedback> {
-  return apiFetch('/api/interview/evaluate', data);
+  return apiFetch('/api/interview/evaluate', { body: data });
 }
 
 export function fetchTranscription(data: TranscribeRequest): Promise<{ text: string }> {
-  return apiFetch('/api/interview/transcribe', data);
+  return apiFetch('/api/interview/transcribe', { body: data });
 }
 
 export function fetchTTS(data: TTSRequest): Promise<TTSResponse> {
-  return apiFetch('/api/interview/tts', data);
+  return apiFetch('/api/interview/tts', { body: data });
+}
+
+// --- Analytics API ---
+
+export function fetchAnalytics(): Promise<import('@/types').AnalyticsData> {
+  return apiFetch('/api/analytics');
 }
 
 // --- Sessions API ---
@@ -68,11 +87,39 @@ export function fetchSessions(): Promise<{ sessions: InterviewSession[] }> {
 }
 
 export function saveSession(data: SaveSessionRequest): Promise<{ id: string }> {
-  return apiFetch('/api/sessions', data);
+  return apiFetch('/api/sessions', { body: data });
 }
 
 export function fetchSession(id: string): Promise<{ session: InterviewSession }> {
   return apiFetch(`/api/sessions/${id}`);
+}
+
+// --- Stripe / Subscription API ---
+
+export function createCheckoutSession(): Promise<{ url: string }> {
+  return apiFetch('/api/stripe/checkout', { method: 'POST' });
+}
+
+export function fetchSubscription(): Promise<import('@/types').SubscriptionStatus> {
+  return apiFetch('/api/stripe/subscription');
+}
+
+export function createPortalSession(): Promise<{ url: string }> {
+  return apiFetch('/api/stripe/portal', { method: 'POST' });
+}
+
+// --- Draft API ---
+
+export function fetchDraft(): Promise<{ draft: import('@/types').InterviewDraft | null }> {
+  return apiFetch('/api/interview/draft');
+}
+
+export function saveDraft(data: import('@/types').InterviewDraft): Promise<{ success: boolean }> {
+  return apiFetch('/api/interview/draft', { method: 'PUT', body: data });
+}
+
+export function deleteDraft(): Promise<{ success: boolean }> {
+  return apiFetch('/api/interview/draft', { method: 'DELETE' });
 }
 
 // --- Audio helpers ---
