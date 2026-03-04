@@ -541,7 +541,7 @@ export function InterviewFlow() {
         <ProfileSetup key="profile-setup" />
       )}
 
-      {step === 'job-setup' && (
+      {step === 'job-setup' && !quotaExceeded && (
         <JobSetupForm
           key="job-setup"
           onComplete={handleJobSetupComplete}
