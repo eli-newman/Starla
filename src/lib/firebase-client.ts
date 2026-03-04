@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
@@ -16,5 +16,16 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const signInWithGoogle = async () => {
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error: unknown) {
+    const code = (error as { code?: string }).code;
+    // Popup blocked or closed — fall back to redirect
+    if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
+      return signInWithRedirect(auth, googleProvider);
+    }
+    throw error;
+  }
+};
 export const logOut = () => signOut(auth);
