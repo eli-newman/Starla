@@ -15,7 +15,8 @@ export async function verifyAuth(request: NextRequest): Promise<AuthenticatedReq
   try {
     const decoded = await getAdminAuth().verifyIdToken(token);
     return { uid: decoded.uid };
-  } catch {
+  } catch (err) {
+    console.error('verifyIdToken failed:', err);
     throw new AuthError('Invalid or expired token', 401);
   }
 }

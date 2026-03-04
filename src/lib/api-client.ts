@@ -18,7 +18,7 @@ import type {
 async function getIdToken(): Promise<string> {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
-  return user.getIdToken();
+  return user.getIdToken(true);
 }
 
 async function apiFetch<T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> {

@@ -13,7 +13,7 @@ interface ResumeInputProps {
 
 async function extractTextFromPdf(file: File): Promise<string> {
   const auth = getAuth();
-  const token = await auth.currentUser?.getIdToken();
+  const token = await auth.currentUser?.getIdToken(true);
   if (!token) throw new Error('Not authenticated');
 
   const formData = new FormData();

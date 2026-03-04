@@ -10,8 +10,14 @@ function getAdminApp() {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
   }
 
+  const parsed = JSON.parse(serviceAccountKey);
+  // Vercel env vars may store private_key with literal "\n" instead of newlines
+  if (parsed.private_key) {
+    parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+  }
+
   return initializeApp({
-    credential: cert(JSON.parse(serviceAccountKey)),
+    credential: cert(parsed),
   });
 }
 
