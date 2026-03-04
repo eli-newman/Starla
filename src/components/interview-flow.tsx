@@ -181,11 +181,14 @@ export function InterviewFlow() {
   const handleUpgrade = async () => {
     setUpgradeLoading(true);
     try {
-      const { url } = await createCheckoutSession();
-      window.location.href = url;
+      const result = await createCheckoutSession();
+      if (!result.url) {
+        throw new Error('No checkout URL returned');
+      }
+      window.location.assign(result.url);
     } catch (error) {
       console.error('Failed to create checkout session:', error);
-      toast.error('Failed to start upgrade. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'Failed to start upgrade. Please try again.');
       setUpgradeLoading(false);
     }
   };
