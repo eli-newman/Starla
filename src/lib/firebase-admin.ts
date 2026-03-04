@@ -11,23 +11,18 @@ function getAdminApp() {
   }
 
   // Strip wrapping quotes (single or double) that may be copied from .env files
-  const serviceAccountKey = raw.replace(/^['"]|['"]$/g, '');
+  let serviceAccountKey = raw.replace(/^['"]|['"]$/g, '');
 
   let parsed;
   try {
     parsed = JSON.parse(serviceAccountKey);
-  } catch (e) {
-    console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:', (e as Error).message);
-    console.error('First 50 chars:', serviceAccountKey.substring(0, 50));
-    throw e;
+  } catch {
+    // Vercel stores env vars with real newlines in the private_key field,
+    // which are invalid control characters inside a JSON string literal.
+    // Escape them so JSON.parse can handle the value.
+    serviceAccountKey = serviceAccountKey.replace(/\n/g, '\\n');
+    parsed = JSON.parse(serviceAccountKey);
   }
-
-  // Vercel env vars may store private_key with literal "\n" instead of newlines
-  if (parsed.private_key && typeof parsed.private_key === 'string') {
-    parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
-  }
-
-  console.log('Firebase Admin init — project:', parsed.project_id, 'email:', parsed.client_email);
 
   return initializeApp({
     credential: cert(parsed),
