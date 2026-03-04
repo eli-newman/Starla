@@ -18,9 +18,12 @@ vi.mock('@/lib/firebase-admin', () => {
     ],
   });
   const mockOrderBy = vi.fn().mockReturnValue({ get: mockGet });
-  const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+  // Quota check uses .where().where().get() — second where returns { get }
+  const mockQuotaGet = vi.fn().mockResolvedValue({ size: 0, docs: [] });
+  const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, where: vi.fn().mockReturnValue({ get: mockQuotaGet }), get: mockGet });
   const mockDelete = vi.fn().mockResolvedValue(undefined);
-  const mockDoc = vi.fn().mockReturnValue({ delete: mockDelete });
+  const mockUserGet = vi.fn().mockResolvedValue({ data: () => null });
+  const mockDoc = vi.fn().mockReturnValue({ delete: mockDelete, get: mockUserGet });
 
   return {
     getAdminDb: () => ({

@@ -217,6 +217,14 @@ export interface SubscriptionStatus {
   subscription: SubscriptionData | null;
 }
 
+// --- Usage / Quota ---
+
+export interface UsageData {
+  sessionsThisMonth: number;
+  limit: number;
+  plan: 'free' | 'pro';
+}
+
 // --- Interview Draft (auto-save / resume) ---
 
 export interface InterviewDraft {

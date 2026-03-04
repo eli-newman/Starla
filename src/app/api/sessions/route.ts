@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
+const FREE_MONTHLY_LIMIT = 3;
+
 export async function POST(request: NextRequest) {
   try {
     const { uid } = await verifyAuth(request);
@@ -57,6 +59,49 @@ export async function POST(request: NextRequest) {
         { error: `Rate limit exceeded. Try again in ${rateLimitResult.retryAfter} seconds.` },
         { status: 429 },
       );
+    }
+
+    // --- Quota enforcement for free users ---
+    const db = getAdminDb();
+    let plan: 'free' | 'pro' = 'free';
+    try {
+      const userDoc = await db.collection('users').doc(uid).get();
+      const data = userDoc.data();
+      if (data?.subscription?.plan === 'pro' && data?.subscription?.status === 'active') {
+        plan = 'pro';
+      }
+    } catch {
+      // Default to free
+    }
+
+    if (plan === 'free') {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      let sessionsThisMonth = 0;
+      try {
+        const snapshot = await db
+          .collection('interviews')
+          .where('userId', '==', uid)
+          .where('createdAt', '>=', startOfMonth)
+          .get();
+        sessionsThisMonth = snapshot.size;
+      } catch {
+        const snapshot = await db
+          .collection('interviews')
+          .where('userId', '==', uid)
+          .get();
+        sessionsThisMonth = snapshot.docs.filter((doc) => {
+          const createdAt = doc.data().createdAt;
+          return typeof createdAt === 'string' && createdAt >= startOfMonth;
+        }).length;
+      }
+
+      if (sessionsThisMonth >= FREE_MONTHLY_LIMIT) {
+        return NextResponse.json(
+          { error: 'Free plan limit reached', code: 'QUOTA_EXCEEDED' },
+          { status: 403 },
+        );
+      }
     }
 
     let body: unknown;
@@ -82,7 +127,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'history must have at most 100 entries' }, { status: 400 });
     }
 
-    const db = getAdminDb();
     const docRef = await db.collection('interviews').add({
       userId: uid,
       profile,

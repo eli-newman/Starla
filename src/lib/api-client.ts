@@ -94,6 +94,12 @@ export function fetchSession(id: string): Promise<{ session: InterviewSession }>
   return apiFetch(`/api/sessions/${id}`);
 }
 
+// --- Usage / Quota API ---
+
+export function fetchUsage(): Promise<import('@/types').UsageData> {
+  return apiFetch('/api/usage');
+}
+
 // --- Stripe / Subscription API ---
 
 export function createCheckoutSession(): Promise<{ url: string }> {

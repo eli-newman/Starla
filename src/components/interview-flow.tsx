@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Loader2, Search, FileText, MessageSquare } from 'lucide-react';
+import { Loader2, Search, FileText, MessageSquare, Lock } from 'lucide-react';
 import { ProfileSetup } from './profile-setup';
 import { JobSetupForm } from './job-setup';
 import { Interview } from './interview';
@@ -19,6 +19,8 @@ import {
   saveSession,
   fetchDraft,
   deleteDraft,
+  fetchUsage,
+  createCheckoutSession,
 } from '@/lib/api-client';
 import { useToast } from '@/components/toast';
 import { useAutoSave } from '@/hooks/use-auto-save';
@@ -71,6 +73,10 @@ export function InterviewFlow() {
   const originalTranscriptionRef = useRef<string | null>(null);
   const followUpsOfferedRef = useRef(0);
   const followUpsTakenRef = useRef(0);
+
+  // Quota state
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   // Draft resume state
   const [draftToResume, setDraftToResume] = useState<InterviewDraft | null>(null);
@@ -172,8 +178,32 @@ export function InterviewFlow() {
     }
   }, []);
 
+  const handleUpgrade = async () => {
+    setUpgradeLoading(true);
+    try {
+      const { url } = await createCheckoutSession();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Failed to create checkout session:', error);
+      toast.error('Failed to start upgrade. Please try again.');
+      setUpgradeLoading(false);
+    }
+  };
+
   const handleJobSetupComplete = async (data: JobSetup) => {
     if (!profile) return;
+
+    // Check quota before starting
+    try {
+      const usage = await fetchUsage();
+      if (usage.plan === 'free' && usage.sessionsThisMonth >= usage.limit) {
+        setJobSetup(data);
+        setQuotaExceeded(true);
+        return;
+      }
+    } catch {
+      // If usage check fails, let the server-side check in POST /api/sessions handle it
+    }
 
     setJobSetup(data);
     setStep('researching');
@@ -526,6 +556,49 @@ export function InterviewFlow() {
             ) : undefined
           }
         />
+      )}
+
+      {quotaExceeded && (
+        <motion.div
+          key="quota-exceeded"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="flex-1 flex items-center justify-center px-6"
+        >
+          <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center space-y-6">
+            <div className="mx-auto w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <Lock className="w-7 h-7 text-amber-400" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-white">
+                Monthly Limit Reached
+              </h2>
+              <p className="text-neutral-400 text-sm">
+                You&apos;ve used all 3 free practice sessions this month.
+                Upgrade to Pro for unlimited interviews.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleUpgrade}
+                disabled={upgradeLoading}
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                {upgradeLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : null}
+                Upgrade to Pro
+              </button>
+              <button
+                onClick={() => { setQuotaExceeded(false); setStep('job-setup'); }}
+                className="w-full py-3 px-4 text-neutral-400 hover:text-white transition-colors text-sm"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {step === 'researching' && (
