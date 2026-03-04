@@ -10,8 +10,8 @@ function getAdminApp() {
     throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set');
   }
 
-  // Strip wrapping quotes (single or double) that may be copied from .env files
-  let serviceAccountKey = raw.replace(/^['"]|['"]$/g, '');
+  // Strip wrapping quotes and whitespace that may be copied from .env files
+  let serviceAccountKey = raw.trim().replace(/^['"]|['"]$/g, '').trim();
 
   let parsed;
   try {
@@ -19,8 +19,8 @@ function getAdminApp() {
   } catch {
     // Vercel stores env vars with real newlines in the private_key field,
     // which are invalid control characters inside a JSON string literal.
-    // Escape them so JSON.parse can handle the value.
-    serviceAccountKey = serviceAccountKey.replace(/\n/g, '\\n');
+    // Escape them so JSON.parse can handle the value, then trim trailing junk.
+    serviceAccountKey = serviceAccountKey.replace(/\n/g, '\\n').replace(/\\n$/, '');
     parsed = JSON.parse(serviceAccountKey);
   }
 
