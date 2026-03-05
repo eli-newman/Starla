@@ -69,11 +69,11 @@ export function ProfileSetup() {
                 <option value="" disabled>
                   Select level
                 </option>
-                <option value="Entry Level">Entry Level (0-2 years)</option>
-                <option value="Mid Level">Mid Level (3-5 years)</option>
-                <option value="Senior">Senior (5-8 years)</option>
-                <option value="Staff/Principal">Staff/Principal (8+ years)</option>
-                <option value="Executive">Executive</option>
+                <option value="Student (Freshman/Sophomore)">Student (Freshman/Sophomore)</option>
+                <option value="Student (Junior/Senior)">Student (Junior/Senior)</option>
+                <option value="Recent Graduate">Recent Graduate (0-1 year)</option>
+                <option value="Early Career">Early Career (1-3 years)</option>
+                <option value="Mid Career+">Mid Career+ (3+ years)</option>
               </select>
             </div>
           </div>

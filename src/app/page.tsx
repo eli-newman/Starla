@@ -52,9 +52,8 @@ function Hero() {
         </h1>
 
         <p className="text-neutral-400 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">
-          Practice with an AI coach that researches your target company,
-          asks real interview questions, and gives actionable feedback
-          so you land the job.
+          Practice real interview questions, get instant feedback,
+          and walk in confident — even if it&apos;s your first interview.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -253,14 +252,14 @@ const plans = [
     icon: User,
     price: '$0',
     period: 'forever',
-    description: 'Get started with the basics',
+    description: 'Try it out — no commitment',
     features: [
       '3 practice sessions per month',
       'Basic feedback & scoring',
       'Company research',
       'Session history',
     ],
-    cta: 'Get started',
+    cta: 'Start practicing',
     href: '/login',
     highlighted: false,
   },
@@ -269,7 +268,7 @@ const plans = [
     icon: Sparkles,
     price: '$12',
     period: '/month',
-    description: 'For serious job seekers',
+    description: 'For interview season',
     features: [
       'Unlimited practice sessions',
       'Advanced feedback & analytics',
@@ -414,16 +413,16 @@ function SocialProof() {
           className="space-y-8"
         >
           <p className="text-neutral-500 text-sm font-mono uppercase tracking-widest">
-            Trusted by job seekers
+            Trusted by students everywhere
           </p>
           <blockquote className="text-2xl sm:text-3xl font-light text-white leading-relaxed">
-            &ldquo;I prepped for my Google interview with Starla and landed
-            an offer. The AI feedback on my answers was incredibly
-            detailed and actionable.&rdquo;
+            &ldquo;I had my first real interview in a week and was
+            freaking out. Starla helped me practice every night — the
+            feedback was so specific I actually felt ready walking in.&rdquo;
           </blockquote>
           <div className="text-neutral-500 text-sm">
-            <span className="text-neutral-300">Sarah K.</span> — Software
-            Engineer at Google
+            <span className="text-neutral-300">Jordan M.</span> — CS Senior,
+            landed internship at Stripe
           </div>
 
           <div className="flex items-center justify-center gap-12 pt-8">
@@ -471,8 +470,12 @@ const faqs = [
     a: 'Yes! The free plan includes 3 practice sessions per month with basic feedback and company research. Upgrade to Pro for unlimited sessions and advanced analytics.',
   },
   {
-    q: 'What does the University plan include?',
-    a: 'The University plan gives career centers unlimited access for all enrolled students, an admin dashboard with usage analytics, LMS integration, and dedicated support for campus-wide deployment.',
+    q: 'I\'ve never had a real interview — is Starla right for me?',
+    a: 'Absolutely. Most of our users are students practicing for their first interviews. Starla walks you through realistic questions, scores your answers, and tells you exactly what to improve — so you build confidence before the real thing.',
+  },
+  {
+    q: 'What does the Career Center plan include?',
+    a: 'The Career Center plan gives universities unlimited access for all enrolled students, an admin dashboard with usage analytics, LMS integration, and dedicated support for campus-wide deployment.',
   },
   {
     q: 'Is my data secure?',
@@ -556,7 +559,7 @@ function CTA() {
             Ready to ace your next interview?
           </h2>
           <p className="text-neutral-400 text-lg max-w-xl mx-auto">
-            Join thousands of job seekers using Starla to practice smarter and
+            Join thousands of students using Starla to practice smarter and
             land offers faster.
           </p>
           <Link

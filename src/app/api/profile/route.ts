@@ -56,7 +56,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'experience is required and must be a string' }, { status: 400 });
     }
 
-    const validExperiences = ['Entry Level', 'Mid Level', 'Senior', 'Staff/Principal', 'Executive'];
+    const validExperiences = [
+      'Student (Freshman/Sophomore)', 'Student (Junior/Senior)', 'Recent Graduate', 'Early Career', 'Mid Career+',
+      // Legacy values from existing profiles
+      'Entry Level', 'Mid Level', 'Senior', 'Staff/Principal', 'Executive',
+    ];
     if (!validExperiences.includes(experience)) {
       return NextResponse.json({ error: `experience must be one of: ${validExperiences.join(', ')}` }, { status: 400 });
     }

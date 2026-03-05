@@ -28,6 +28,11 @@ export function createBehavioralResearchData(): ResearchData {
       'Tell me about a time you had to persuade someone to see things your way.',
       'Describe a situation where you had to deliver bad news. How did you handle it?',
       'Give an example of a difficult conversation you navigated successfully.',
+      // Student-focused
+      'Tell me about a group project where you had to navigate different opinions.',
+      'Describe a time you balanced academics with extracurricular commitments.',
+      'Tell me about a challenge you faced during an internship or campus job.',
+      'Give an example of when you took initiative in a club, class, or volunteer role.',
     ],
   };
 }
