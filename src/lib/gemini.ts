@@ -69,7 +69,7 @@ export async function researchJob(
     3. Search for "[company name] [role] interview" for role-specific interview data.
     4. Search for recent news and information about the company.
 
-    Provide a JSON object with:
+    Respond with ONLY a JSON object (no markdown, no extra text) with these fields:
     - role: The job title extracted from the job description (e.g. "Senior Software Engineer", "Product Manager")
     - company: The company name extracted from the job description (use "Unknown Company" if not found)
     - companyContext: Key recent news, culture, mission, and values of the company. MUST include: the interview process/format (e.g. "3 rounds: phone screen, technical, onsite"), specific interview tips, and any known patterns from real candidate reports.
@@ -82,24 +82,14 @@ export async function researchJob(
     contents: prompt,
     config: {
       tools: [{ googleSearch: {} }],
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          role: { type: Type.STRING },
-          company: { type: Type.STRING },
-          companyContext: { type: Type.STRING },
-          roleContext: { type: Type.STRING },
-          suggestedQuestions: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-        },
-      },
     },
   });
 
-  const result = JSON.parse(response.text || '{}');
+  const rawText = response.text || '{}';
+  // Extract JSON from response (may be wrapped in ```json ... ```)
+  const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/\{[\s\S]*\}/);
+  const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : '{}';
+  const result = JSON.parse(jsonStr);
 
   const sources =
     response.candidates?.[0]?.groundingMetadata?.groundingChunks
