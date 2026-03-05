@@ -65,6 +65,9 @@ export function InterviewFlow() {
   const prefetchRef = useRef<PrefetchedQuestion | null>(null);
   const prefetchingRef = useRef(false);
 
+  // Guard against double-submission
+  const startingRef = useRef(false);
+
   // Timing tracking
   const questionShownAtRef = useRef<number>(0);
   const sessionStartRef = useRef<number>(0);
@@ -150,6 +153,8 @@ export function InterviewFlow() {
   // Phase 3E: Pre-fetch next question when feedback is displayed
   const prefetchNextQuestion = useCallback(async (currentHistory: InterviewTurn[], research: ResearchData) => {
     if (prefetchingRef.current) return;
+    // Skip prefetch for general mode — questions are picked from curated list
+    if (jobSetup?.mode === 'general') return;
     // Don't prefetch if we've hit the question limit
     const mainQuestionsAsked = currentHistory.filter((h) => !h.question.id.startsWith('followup-')).length;
     if (mainQuestionsAsked >= MAX_QUESTIONS) return;
@@ -178,7 +183,7 @@ export function InterviewFlow() {
     } finally {
       prefetchingRef.current = false;
     }
-  }, []);
+  }, [jobSetup?.mode]);
 
   const handleUpgrade = async () => {
     setUpgradeLoading(true);
@@ -196,7 +201,8 @@ export function InterviewFlow() {
   };
 
   const handleJobSetupComplete = async (data: JobSetup) => {
-    if (!profile) return;
+    if (!profile || startingRef.current) return;
+    startingRef.current = true;
 
     // Check quota before starting
     try {
@@ -204,6 +210,7 @@ export function InterviewFlow() {
       if (usage.plan === 'free' && usage.sessionsThisMonth >= usage.limit) {
         setJobSetup(data);
         setQuotaExceeded(true);
+        startingRef.current = false;
         return;
       }
     } catch {
@@ -220,6 +227,30 @@ export function InterviewFlow() {
         // General mode: use pre-built behavioral context, skip company research
         research = createBehavioralResearchData();
         setResearchData(research);
+
+        // Pick directly from curated list — no AI call needed
+        const shuffled = [...research.suggestedQuestions].sort(() => Math.random() - 0.5);
+        const questionTypes: Question['type'][] = ['behavioral', 'situational', 'behavioral', 'behavioral', 'situational'];
+        const firstQuestion: Question = {
+          id: crypto.randomUUID(),
+          text: shuffled[0],
+          type: questionTypes[0],
+          difficulty: 'medium',
+        };
+
+        let audioUrl: string | undefined;
+        try {
+          const tts = await fetchTTS({ text: firstQuestion.text });
+          audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
+        } catch {
+          // TTS is optional
+        }
+
+        setQuestions([firstQuestion]);
+        setCurrentAudioUrl(audioUrl);
+        sessionStartRef.current = Date.now();
+        questionShownAtRef.current = Date.now();
+        setStep('interview');
       } else {
         // Targeted mode: full research flow
         setStep('researching');
@@ -234,29 +265,29 @@ export function InterviewFlow() {
         });
         setResearchData(research);
         setResearchStep(2);
+
+        const firstQuestionData = await fetchQuestion({ history: [], researchData: research });
+        const firstQuestion: Question = {
+          id: crypto.randomUUID(),
+          text: firstQuestionData.text,
+          type: firstQuestionData.type as Question['type'],
+          difficulty: firstQuestionData.difficulty as Question['difficulty'],
+        };
+
+        let audioUrl: string | undefined;
+        try {
+          const tts = await fetchTTS({ text: firstQuestion.text });
+          audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
+        } catch {
+          // TTS is optional — continue without audio
+        }
+
+        setQuestions([firstQuestion]);
+        setCurrentAudioUrl(audioUrl);
+        sessionStartRef.current = Date.now();
+        questionShownAtRef.current = Date.now();
+        setStep('interview');
       }
-
-      const firstQuestionData = await fetchQuestion({ history: [], researchData: research });
-      const firstQuestion: Question = {
-        id: crypto.randomUUID(),
-        text: firstQuestionData.text,
-        type: firstQuestionData.type as Question['type'],
-        difficulty: firstQuestionData.difficulty as Question['difficulty'],
-      };
-
-      let audioUrl: string | undefined;
-      try {
-        const tts = await fetchTTS({ text: firstQuestion.text });
-        audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
-      } catch {
-        // TTS is optional — continue without audio
-      }
-
-      setQuestions([firstQuestion]);
-      setCurrentAudioUrl(audioUrl);
-      sessionStartRef.current = Date.now();
-      questionShownAtRef.current = Date.now();
-      setStep('interview');
     } catch (error) {
       console.error('Error starting interview:', error);
       toast.error('Failed to start interview. Please try again.');
@@ -264,6 +295,7 @@ export function InterviewFlow() {
     } finally {
       setIsProcessing(false);
       setResearchStep(0);
+      startingRef.current = false;
     }
   };
 
@@ -465,7 +497,39 @@ export function InterviewFlow() {
 
     setIsProcessing(true);
     try {
-      // Phase 3E: Use prefetched question if available
+      // General mode: pick from curated list directly
+      if (jobSetup?.mode === 'general') {
+        const usedTexts = new Set(questions.map((q) => q.text));
+        const available = researchData.suggestedQuestions.filter((q) => !usedTexts.has(q));
+        const questionTypes: Question['type'][] = ['behavioral', 'situational'];
+        const nextText = available.length > 0
+          ? available[Math.floor(Math.random() * available.length)]
+          : researchData.suggestedQuestions[Math.floor(Math.random() * researchData.suggestedQuestions.length)];
+
+        const nextQuestion: Question = {
+          id: crypto.randomUUID(),
+          text: nextText,
+          type: questionTypes[Math.floor(Math.random() * questionTypes.length)],
+          difficulty: 'medium',
+        };
+
+        let audioUrl: string | undefined;
+        try {
+          const tts = await fetchTTS({ text: nextQuestion.text });
+          audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
+        } catch {
+          // TTS is optional
+        }
+
+        setQuestions((prev) => [...prev, nextQuestion]);
+        setCurrentQuestionIndex((prev) => prev + 1);
+        setCurrentAudioUrl(audioUrl);
+        questionShownAtRef.current = Date.now();
+        setIsProcessing(false);
+        return;
+      }
+
+      // Targeted mode: Use prefetched question if available
       if (prefetchRef.current) {
         const { question, audioUrl } = prefetchRef.current;
         prefetchRef.current = null;
