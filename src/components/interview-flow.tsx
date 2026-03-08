@@ -238,19 +238,16 @@ export function InterviewFlow() {
           difficulty: 'medium',
         };
 
-        let audioUrl: string | undefined;
-        try {
-          const tts = await fetchTTS({ text: firstQuestion.text });
-          audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
-        } catch {
-          // TTS is optional
-        }
-
         setQuestions([firstQuestion]);
-        setCurrentAudioUrl(audioUrl);
+        setCurrentAudioUrl(undefined);
         sessionStartRef.current = Date.now();
         questionShownAtRef.current = Date.now();
         setStep('interview');
+
+        // Load TTS in background — don't block the interview from starting
+        fetchTTS({ text: firstQuestion.text })
+          .then((tts) => setCurrentAudioUrl(base64ToAudioUrl(tts.audioBase64, tts.sampleRate)))
+          .catch(() => {});
       } else {
         // Targeted mode: full research flow
         setStep('researching');
@@ -513,19 +510,16 @@ export function InterviewFlow() {
           difficulty: 'medium',
         };
 
-        let audioUrl: string | undefined;
-        try {
-          const tts = await fetchTTS({ text: nextQuestion.text });
-          audioUrl = base64ToAudioUrl(tts.audioBase64, tts.sampleRate);
-        } catch {
-          // TTS is optional
-        }
-
         setQuestions((prev) => [...prev, nextQuestion]);
         setCurrentQuestionIndex((prev) => prev + 1);
-        setCurrentAudioUrl(audioUrl);
+        setCurrentAudioUrl(undefined);
         questionShownAtRef.current = Date.now();
         setIsProcessing(false);
+
+        // Load TTS in background — don't block the next question from showing
+        fetchTTS({ text: nextQuestion.text })
+          .then((tts) => setCurrentAudioUrl(base64ToAudioUrl(tts.audioBase64, tts.sampleRate)))
+          .catch(() => {});
         return;
       }
 
