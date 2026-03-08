@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Loader2, Pause, Send, Volume2, Edit3, RotateCcw, Check } from 'lucide-react';
+import { Loader2, Pause, Send, Volume2, Edit3, RotateCcw, Check, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { AudioRecorder } from './audio-recorder';
 import type { Question, Feedback } from '@/types';
+import { ShareScoreModal } from './share-score-card';
 
 interface InterviewProps {
   question: Question;
@@ -46,6 +47,7 @@ export function Interview({
 }: InterviewProps) {
   const [answerText, setAnswerText] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -227,6 +229,13 @@ export function Interview({
               </div>
 
               <div className="pt-4 flex justify-end gap-3">
+                <button
+                  onClick={() => setShareOpen(true)}
+                  className="px-5 py-2 rounded-full text-sm font-medium border border-neutral-700 text-neutral-300 hover:text-white hover:border-neutral-500 transition-colors flex items-center gap-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share Score
+                </button>
                 {onFollowUp && (
                   <button
                     onClick={onFollowUp}
@@ -260,6 +269,16 @@ export function Interview({
           )}
         </AnimatePresence>
       </div>
+
+      {feedback && shareOpen && (
+        <ShareScoreModal
+          score={feedback.score}
+          strengths={feedback.strengths}
+          questionType={question.type}
+          questionNumber={questionNumber}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       {!feedback && previewText === null && (
         <motion.div

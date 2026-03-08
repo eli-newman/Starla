@@ -10,11 +10,13 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Share2,
 } from 'lucide-react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { fetchSession } from '@/lib/api-client';
 import type { InterviewSession } from '@/types';
+import { ShareScoreModal } from './share-score-card';
 
 interface SessionDetailProps {
   sessionId: string;
@@ -24,6 +26,7 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareQuestion, setShareQuestion] = useState<number | null>(null);
 
   useEffect(() => {
     fetchSession(sessionId)
@@ -98,6 +101,16 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
         </div>
       </motion.div>
 
+      {shareQuestion !== null && session.history[shareQuestion]?.feedback && (
+        <ShareScoreModal
+          score={session.history[shareQuestion].feedback!.score}
+          strengths={session.history[shareQuestion].feedback!.strengths}
+          questionType={session.history[shareQuestion].question.type}
+          questionNumber={shareQuestion + 1}
+          onClose={() => setShareQuestion(null)}
+        />
+      )}
+
       {/* Q&A History */}
       <div className="space-y-6">
         {session.history.map((turn, index) => (
@@ -130,7 +143,16 @@ export function SessionDetail({ sessionId }: SessionDetailProps) {
               <div className="space-y-4 pt-4 border-t border-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-neutral-500 font-mono uppercase">Feedback</span>
-                  <span className="font-bold">{turn.feedback.score}/10</span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShareQuestion(index)}
+                      className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-white transition-colors"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      Share
+                    </button>
+                    <span className="font-bold">{turn.feedback.score}/10</span>
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4 text-sm">

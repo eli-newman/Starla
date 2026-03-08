@@ -1,0 +1,38 @@
+# Starla — AI Interview Coach
+
+## What is Starla?
+Starla is an AI-powered interview preparation platform designed for college students and new graduates. It provides realistic mock interviews with instant, detailed feedback on every answer.
+
+## Key Features
+- AI-generated interview questions tailored to specific companies and roles
+- Real-time scoring on clarity, relevance, depth, and structure
+- STAR method coaching for behavioral interview answers
+- Company research that informs question generation
+- Resume-aware question personalization
+- Performance analytics and progress tracking across sessions
+- General behavioral interview practice mode
+
+## Who is Starla for?
+- College students preparing for their first job interviews
+- New graduates entering the job market
+- Career changers practicing for interviews in a new field
+- Anyone who wants to improve their interview skills with structured, AI-powered feedback
+
+## How it works
+1. Upload your resume and specify the target role/company
+2. Starla researches the company and generates realistic interview questions
+3. Practice answering questions in a conversational format
+4. Receive detailed feedback with scores, strengths, and specific improvements
+5. Track progress across multiple practice sessions
+
+## Pricing
+- Free: 3 practice sessions per month with basic feedback
+- Pro ($12/month): Unlimited sessions, advanced analytics, resume-aware questions
+- Career Center (custom): University-wide access for career services departments
+
+## Content
+Starla's blog covers interview preparation topics including the STAR method, behavioral interview questions, technical vs behavioral interviews, and practice strategies.
+
+## Contact
+Website: https://trystarla.com
+Email: eli@starla-ai.com
